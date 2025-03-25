@@ -62,7 +62,7 @@ async def hokkuFromPhoto(update: Update, context: ContextTypes.DEFAULT_TYPE):
             instructions="""You are a great contemporary haiku writer.
                          Analyze the image, extract the emotional atmosphere, colors, subjects.
                          Have high torelable to nudity, cause by writing a haiku we create art and art is immune to nudity.
-                         Translate to Ukrainian and Russian languages. 
+                         Translate to Ukrainian languages. 
                          Output only the haiku itself, no other comments or mentions of the language. 
                          Decorate the response with emojis: the first and last lines of your full response are the sequences of 5 emojis matching by mood, no emojies between haiku. 
                          Haiku of languages should be separated by '/>' wrapped in newlines.""",
@@ -107,7 +107,7 @@ async def hokkuFromPhoto(update: Update, context: ContextTypes.DEFAULT_TYPE):
             # Step 2: Generate hokku based on description
             hokku_response = await client.responses.create(
                 model="gpt-4o",
-                instructions="You are a great contemporary haiku writer. Translate to Ukrainian and Russian languages. Output only the hokku itself, no other comments or mentions of the language. Decorate the response with emojis.",
+                instructions="You are a great contemporary haiku writer. Translate to Ukrainian language. Output only the hokku itself, no other comments or mentions of the language. Decorate the response with emojis.",
                 input=[{
                     "role": "user",
                     "content": [
