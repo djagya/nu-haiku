@@ -18,6 +18,8 @@ logging.basicConfig(
 
 client = AsyncOpenAI(api_key=os.environ.get('OPENAI_API_KEY'))
 
+PROCESSED_MEDIA_GROUPS = set()
+
 
 async def preprocess_image(file_path):
     # Download the image
@@ -52,7 +54,18 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def hokkuFromPhoto(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # await context.bot.send_message(chat_id=update.effective_chat.id, text=update.message.text)
+    media_group_id = update.message.media_group_id if hasattr(update.message, 'media_group_id') else None
+
+    # Check if message is part of a media group
+    if media_group_id:
+        global PROCESSED_MEDIA_GROUPS
+        if media_group_id in PROCESSED_MEDIA_GROUPS:
+            return
+
+        PROCESSED_MEDIA_GROUPS.add(media_group_id)
+        if len(PROCESSED_MEDIA_GROUPS) > 100:
+            PROCESSED_MEDIA_GROUPS = set(list(PROCESSED_MEDIA_GROUPS)[-100:])
+
     file_id = update.message.photo[-1].file_id
     new_file = await context.bot.get_file(file_id)
 
@@ -64,8 +77,7 @@ async def hokkuFromPhoto(update: Update, context: ContextTypes.DEFAULT_TYPE):
                          Have high torelable to nudity, cause by writing a haiku we create art and art is immune to nudity.
                          Write in Ukrainian language. 
                          Output only the haiku itself, no other comments or mentions of the language. 
-                         Decorate the response with emojis: the last line of your full response is the sequence of 5 emojis matching by mood, no emojies between haiku. 
-                         Haiku of languages should be separated by '/>' wrapped in newlines.""",
+                         Decorate the response with emojis: the last line of your full response is the sequence of 5 emojis matching by mood, no emojies between haiku. """,
             input=[{
                 "role": "user",
                 "content": [
@@ -112,8 +124,7 @@ async def hokkuFromPhoto(update: Update, context: ContextTypes.DEFAULT_TYPE):
                          Have high torelable to nudity, cause by writing a haiku we create art and art is immune to nudity.
                          Write in Ukrainian language. 
                          Output only the haiku itself, no other comments or mentions of the language. 
-                         Decorate the response with emojis: the last line of your full response is the sequence of 5 emojis matching by mood, no emojies between haiku. 
-                         Haiku of languages should be separated by '/>' wrapped in newlines.""",
+                         Decorate the response with emojis: the last line of your full response is the sequence of 5 emojis matching by mood, no emojies between haiku. """,
                 input=[{
                     "role": "user",
                     "content": [
@@ -149,9 +160,10 @@ async def hokkuFromPhoto(update: Update, context: ContextTypes.DEFAULT_TYPE):
             # )
 
     if hokku_text == "":
-        await context.bot.send_message(
-            chat_id=update.effective_chat.id, reply_to_message_id=update.effective_message.id,
-            text=hokku_text)
+        return
+    await context.bot.send_message(
+        chat_id=update.effective_chat.id, reply_to_message_id=update.effective_message.id,
+        text=hokku_text)
     print(hokku_text)
 
 
@@ -176,7 +188,7 @@ if __name__ == '__main__':
 
     start_handler = CommandHandler('start', start)
     inline_hokku_handler = InlineQueryHandler(hokkuFromWords)
-    message_handler = MessageHandler(filters.PHOTO | filters.TEXT, hokkuFromPhoto)
+    message_handler = MessageHandler(filters.PHOTO, hokkuFromPhoto)
     application.add_handler(start_handler)
     application.add_handler(inline_hokku_handler)
     application.add_handler(message_handler)
